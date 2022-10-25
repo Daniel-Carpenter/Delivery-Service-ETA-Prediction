@@ -1,0 +1,2 @@
+"0","# df.train[!complete.cases(df.train$keyword), ] %>%"
+"0","#   distinct(adContent, adwordsClickInfo.adNetworkType, adwordsClickInfo.isVideoAd, keyword)"

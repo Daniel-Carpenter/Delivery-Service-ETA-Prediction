@@ -1,0 +1,8 @@
+"0","# Get cleaned `numeric` and `factor` `data frames`"
+"0","# After cleaning, two data sets that contain.."
+"0",""
+"0","## Numeric data "
+"0","df.train.clean.numeric <- df.train.clean %>% select_if(is.numeric)"
+"0",""
+"0","## Factors "
+"0","df.train.clean.factor  <- df.train.clean %>% dplyr::select(where(is.factor))"

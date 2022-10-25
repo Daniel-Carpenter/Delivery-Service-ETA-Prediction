@@ -1,0 +1,7 @@
+"0",""
+"0","# Transforming the revenue"
+"0",""
+"0","transformed_revenue <- df.train.base %>%"
+"0","  group_by(custId) %>%"
+"0","  summarise(targetRevenue = log(sum(revenue)) + 1) %>%"
+"0","  ungroup()"

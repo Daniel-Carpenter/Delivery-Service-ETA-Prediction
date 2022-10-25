@@ -1,0 +1,4 @@
+"0","# "
+"0","# df.train[!complete.cases(df.train$adwordsClickInfo.gclId), ] %>%"
+"0","#   distinct(referralPath, adwordsClickInfo.gclId)"
+"0",""

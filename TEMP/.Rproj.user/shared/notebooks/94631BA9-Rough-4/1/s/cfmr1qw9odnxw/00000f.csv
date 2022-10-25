@@ -1,0 +1,2 @@
+"0","# factor data frame stats"
+"0","initialReport$dfStats.factor %>% kable()"

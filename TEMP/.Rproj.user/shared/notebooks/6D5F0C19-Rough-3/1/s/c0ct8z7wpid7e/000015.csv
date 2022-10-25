@@ -1,0 +1,6 @@
+"0","# Finally, transform the revenue"
+"0","df.train.cleanTransformed <- df.train.base %>%"
+"0","  mutate(nLogRevenue = log(revenue + 1)) %>%"
+"0","  dplyr::select(-revenue)"
+"0",""
+"0","df.train.cleanTransformed <- cbind(nLogRevenue = df.train.cleanTransformed$nLogRevenue, df.train.cleanTransformed)"

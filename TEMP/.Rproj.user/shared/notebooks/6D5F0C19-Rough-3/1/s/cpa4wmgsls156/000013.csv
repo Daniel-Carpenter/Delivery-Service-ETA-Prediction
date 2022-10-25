@@ -1,0 +1,1 @@
+"0","fit.ols <- lm(nLogRevenue ~ ., data = df.train.cleanTransformed[1:20000, 1:(ncol(df.train.cleanTransformed) - 20)])"

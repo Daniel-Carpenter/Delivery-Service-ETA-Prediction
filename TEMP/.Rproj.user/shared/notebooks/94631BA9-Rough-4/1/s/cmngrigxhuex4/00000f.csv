@@ -1,0 +1,4 @@
+"0",""
+"0","# df.train[!complete.cases(df.train$adContent), ] %>%"
+"0","#   distinct(adContent, referralPath)"
+"0",""
