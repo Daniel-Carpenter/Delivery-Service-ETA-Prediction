@@ -1,5 +1,0 @@
-"0",""
-"0","hist(df.train.merge$totalRevenue,"
-"0","     col = 'skyblue4',"
-"0","     main = 'Distribution of Target Revenue for each customer',"
-"0","     xlab = 'Target Revenue')"

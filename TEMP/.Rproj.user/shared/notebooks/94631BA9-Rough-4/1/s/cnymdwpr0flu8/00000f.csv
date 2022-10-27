@@ -1,8 +1,0 @@
-"0",""
-"0","# df.train %>%"
-"0","#   distinct(campaign)"
-"0","# "
-"0","# df.train[!complete.cases(df.train$campaign), ] %>%"
-"0","#   distinct(campaign, adwordsClickInfo.page, adwordsClickInfo.slot, "
-"0","#            adwordsClickInfo.adNetworkType, adwordsClickInfo.isVideoAd)"
-"0",""

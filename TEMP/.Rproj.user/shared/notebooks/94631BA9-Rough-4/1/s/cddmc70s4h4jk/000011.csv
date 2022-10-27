@@ -1,4 +1,0 @@
-"0",""
-"0","# Numeric column stats"
-"0","initialReport$dfColStats.num %>%"
-"0","  kable() %>% kable_styling(font_size=7, latex_options = 'HOLD_position') # numeric data"

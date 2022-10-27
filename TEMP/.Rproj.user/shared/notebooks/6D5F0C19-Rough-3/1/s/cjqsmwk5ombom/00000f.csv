@@ -1,7 +1,0 @@
-"0","df.train.base.factor <- df.train.base %>%"
-"0",""
-"0","  #selecting all the numeric data"
-"0","  dplyr::select_if(is.factor) %>%"
-"0",""
-"0","  #converting the data frame to tibble"
-"0","  as_tibble()"

@@ -1,4 +1,0 @@
-"0",""
-"0","# df.train[!complete.cases(df.train$continent), ] %>%"
-"0","#   distinct(continent, subContinent, country, region, metro, city)"
-"0",""

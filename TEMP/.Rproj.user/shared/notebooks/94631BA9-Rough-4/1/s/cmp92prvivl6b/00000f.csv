@@ -1,7 +1,0 @@
-"0",""
-"0","# df.train[!complete.cases(df.train$adwordsClickInfo.adNetworkType), ] %>%"
-"0","#   distinct(adwordsClickInfo.adNetworkType,adwordsClickInfo.page, adwordsClickInfo.slot,"
-"0","#            adwordsClickInfo.gclId, adwordsClickInfo.adNetworkType, adwordsClickInfo.isVideoAd)"
-"0",""
-"0","#referralPath,adwordsClickInfo.page, adwordsClickInfo.slot,  adwordsClickInfo.gclId,adwordsClickInfo.adNetworkType,adwordsClickInfo.isVideoAd"
-"0",""

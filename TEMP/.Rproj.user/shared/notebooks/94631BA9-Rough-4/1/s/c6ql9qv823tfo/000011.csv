@@ -1,4 +1,0 @@
-"0","ctrl <- trainControl(method  = ""repeatedcv"", "
-"0","                     number  = 5, # 5 fold cross validation"
-"0","                     repeats = 5  # 2 repeats"
-"0","                     )"

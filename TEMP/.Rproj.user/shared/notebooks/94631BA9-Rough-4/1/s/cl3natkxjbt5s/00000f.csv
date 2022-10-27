@@ -1,7 +1,0 @@
-"0","#Cleaning up some  variables no longer needed"
-"0","rm(CustRev)"
-"0","rm(numRowsWithNulls)"
-"0","rm(df.train.base)"
-"0","rm(df.train.base.factor)"
-"0","rm(df.train.base.numeric)"
-"0","rm(df.train.merge)"

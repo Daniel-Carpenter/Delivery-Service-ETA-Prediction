@@ -1,5 +1,0 @@
-"0","#removing some unwanted variables"
-"0","rm(cumPropThreshold)"
-"0","rm(numPCs)"
-"0","rm(pc.train)"
-"0","rm(pc.train.summary)"
