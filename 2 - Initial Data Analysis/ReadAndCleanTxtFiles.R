@@ -155,12 +155,12 @@ readAndCleanTxtFiles <- function(textFileDirectory, # Directory of the text file
   return(df.clean)
 }
 
-# Read in training data
-df.train <- readAndCleanTxtFiles(textFileDirectory = 'SampleData/Train/',
+# Read in training data, write to csv ('TrainingData.csv')
+df.train <- readAndCleanTxtFiles(textFileDirectory = 'C:/Users/daniel.carpenter/Downloads/archive/train/',
                                  isTrainingData    = TRUE)
 
-# Read in test data
-df.test <- readAndCleanTxtFiles(textFileDirectory = 'SampleData/Test/',
+# Read in test data, write to csv ('Test.csv')
+df.test <- readAndCleanTxtFiles(textFileDirectory = 'C:/Users/daniel.carpenter/Downloads/archive/test/',
                                 isTrainingData    = FALSE)
 
 
