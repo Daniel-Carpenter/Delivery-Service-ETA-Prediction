@@ -48,13 +48,16 @@ library(earth) # Modeling with Mars
 library(pls)   # Modeling with PLS
 library(glmnet) # Modeling with LASSO
 
+# Imputation
+library(VIM)   # Factor: kNN
+library(mice)  # Numeric: predictive mean matching
+
 # Aesthetics
 library(knitr)
 library(cowplot)  # multiple ggplots on one plot with plot_grid()
 library(scales)
 library(kableExtra)
 library(inspectdf)
-library(GGally) # Pairs plots
 
 #Hold-out Validation
 library(caTools)
@@ -405,9 +408,10 @@ help fit the models more efficiently.
 # ==============================================================================
 
 # Copy data
-df         <- df.train.base          # Full dataset
-df.numeric <- df.train.base.numeric  # Numeric only columns
-df.imputed <- df                     # To store numeric imputation output
+df         <- df.train.base         # Full dataset
+df.numeric <- df.train.base.numeric # Numeric only columns
+df.factor  <- df.train.base.factor  # Numeric only columns
+df.imputed <- df                    # To store numeric imputation output
 
 
 # Missingingness ---------------------------------------------------------------
@@ -531,42 +535,60 @@ imputeWithPMM <- function(colWithMissingData) {
 
 
 # Which columns has Na's?
-colNamesWithNulls <- colnames(df.numeric[ , colSums(is.na(df.numeric)) != 0])
-colNamesWithNulls
+colNamesWithNulls.num <- colnames(df.numeric[ , colSums(is.na(df.numeric)) != 0])
+colNamesWithNulls.num
 
-numberOfColsWithNulls = length(colNamesWithNulls)
+numberOfColsWithNulls = length(colNamesWithNulls.num)
 
 # For each of the numeric columns with null values
 for (colWithNullsNum in 1:numberOfColsWithNulls) {
   
   # The name of the column with null values
-  nameOfThisColumn <- colNamesWithNulls[colWithNullsNum]
+  nameOfThisColumn <- colNamesWithNulls.num[colWithNullsNum]
   
   # Get the actual data of the column with nulls
   colWithNulls <- df[, nameOfThisColumn]
   
   # Impute the missing values with PMM
-  imputedValues <- imputeWithPMM(colWithNulls)
+  imputedValues.num <- imputeWithPMM(colWithNulls)
   
-  # Now store the data in the original new frame
-  df.imputed[, nameOfThisColumn] <- imputedValues
+  # Now store the data in the imputed data frame
+  df.imputed[, nameOfThisColumn] <- imputedValues.num
   
   # Save a visualization of the imputation
   pmmVisual <- seeImputation(data.frame(y = colWithNulls),
-                             data.frame(y = imputedValues),
+                             data.frame(y = imputedValues.num),
                              nameOfThisColumn )
   
-  fileToSave = paste0('OutputPMM/Imputation_With_PMM_', nameOfThisColumn, '.pdf')
-  print(paste0('For imputation results of ', nameOfThisColumn, ', see ', fileToSave))
-  dir.create("OutputPMM/")
-  ggsave(pmmVisual, filename = fileToSave,
-         height = 11, width = 8.5)
+  # Uncomment if you want to visual the PMM imputation
+  # fileToSave = paste0('OutputPMM/Imputation_With_PMM_', nameOfThisColumn, '.pdf')
+  # print(paste0('For imputation results of ', nameOfThisColumn, ', see ', fileToSave))
+  # dir.create("OutputPMM/")
+  # ggsave(pmmVisual, filename = fileToSave,
+  #        height = 11, width = 8.5)
 }
 
-### `Factor`: Leverage k-nearest neighbors to impute missing factor data. 
-### This is likely possible because there is not a significant portion of the factor
-### data that is missing, so it should not be computationally extensive.
+# colnames(df.imputed[ , colSums(is.na(df.imputed)) != 0]) # Check to see if it worked for numeric fields
 
+
+### `Factor`: Leverage k-nearest neighbors to impute missing factor data. ------
+
+# Get the factor data with missing columns
+colNamesWithNulls.factor <- colnames(df.factor[ , colSums(is.na(df.factor)) != 0])
+colNamesWithNulls.factor
+
+NUM_NEIGHBORS = 5 # number of neighbors
+
+# Impute missing factor data for columns with missing data
+imputedValues.factor <- kNN( df[, colNamesWithNulls.factor], k=NUM_NEIGHBORS )
+
+# Remove the columns indicating if factor data was imputed
+imputedValues.factor <- imputedValues.factor %>% dplyr::select(-ends_with('imp'))
+
+# Now store the data in the imputed data frame
+df.imputed[, colNamesWithNulls.factor] <- imputedValues
+
+# colnames(df.imputed[ , colSums(is.na(df.imputed)) != 0]) # Check to see if it worked
 
 # Outliers ---------------------------------------------------------------------
 ## 1. We will prioritize limiting outliers of the target variable.  
