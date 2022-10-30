@@ -179,27 +179,32 @@ df.test.base  <- readCleanFromGit(gitDirectoryURL = gitDirectory,
 
 
 ## Create `numeric` and `factor` *base* `data frames`
-
-Make data set of `numeric` variables called `df.train.base.numeric`
 ```{r}
-df.train.base.numeric <- df.train.base %>%
+# Function to separate into factor and numeric data ----------------------------
+separateFactorAndNumeric <- function(df, functionType) {
+  
+  # Numeric Data frame
+  df.typeSubset<- df %>%
+  
+    # selecting all the ______ data, e.g. is.numeric
+    dplyr::select_if(functionType) %>%
+  
+    # converting the data frame to tibble
+    as_tibble()
+  
+  return(df.typeSubset)
+}
 
-  # selecting all the numeric data
-  dplyr::select_if(is.numeric) %>%
 
-  # converting the data frame to tibble
-  as_tibble()
-```
+# Create the factor and numeric data -------------------------------------------
 
-Make data set of `factor` variables called `df.train.base.factor`
-```{r}
-df.train.base.factor <- df.train.base %>%
+## Training data
+df.train.base.numeric <- separateFactorAndNumeric(df.train.base, is.numeric) # numeric
+df.train.base.factor  <- separateFactorAndNumeric(df.train.base, is.factor)  # factor
 
-  # selecting all the numeric data
-  dplyr::select_if(is.factor) %>%
-
-  # converting the data frame to tibble
-  as_tibble()
+## Test Data
+df.test.base.numeric  <- separateFactorAndNumeric(df.train.base, is.numeric) # numeric
+df.test.base.factor   <- separateFactorAndNumeric(df.train.base, is.factor)  # factor
 ```
 
 \newpage
@@ -307,41 +312,6 @@ initialReport$dfColStats.factor %>%
   kable() %>% kable_styling(font_size=7, latex_options = 'HOLD_position') # numeric data
 ```
 
-
-\newpage
-
-## Expected Approach for Cleaning Data
-
-### Missingingness
-* To handle missingness, we will likely take the following approach for `numeric` and `factor` data:  
-  - `Numeric`: Impute missing values using predictive mean matching with the `mice` package  
-  - `Factor`: Leverage k-nearest neighbors to impute missing factor data. 
-  This is likely possible because there is not a significant portion of the factor 
-  data that is missing, so it should not be computationally extensive.    
-
-### Outliers
-1. We will prioritize limiting outliers of the target variable.  
-2. We will also analyze each numeric independent variable to discover any outliers.
-If there are few outliers, then we will likely omit that data. If outliers persist in
-a large portion of the data, then we will limit the removal of outlying data.
-
-### Skews
-
-#### Target Variable  
-* The below exploratory analysis shows that the $Target\_Variable$ is skewed.  
-* However, see that the $\log (Target\_Variable)$ is close to being normal, so 
-we will not  need to transform this data.
-
-#### Other Numeric Predictors
-If other numeric variables are highlight skewed (within the test and train data),
-then we will likely use the `boxcox` function to normalize the test and training variables
-associated.
-
-### Factors
-Since the factor data contains few unique values, we will not need to factor lump the data.
-If there was many unique values in related variables, then we would factor lump to 
-help fit the models more efficiently.
-
 \newpage
 
 ## Exploratory Analysis and Visualizations
@@ -371,3 +341,104 @@ hist(log(df.train.base$Target_Variable + 1),
 M = cor(df.train.base.numeric) # create correlation matric of numeric data
 corrplot(M, method = 'ellipse') # Show spread and direction  
 ```
+
+
+<!-- INSERT HERE  -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+
+\newpage
+
+# Data Cleansing
+
+## Missingingness
+* To handle missingness, we will likely take the following approach for `numeric` and `factor` data:  
+  - `Numeric`: Impute missing values using predictive mean matching with the `mice` package  
+  - `Factor`: Leverage k-nearest neighbors to impute missing factor data. 
+  This is likely possible because there is not a significant portion of the factor 
+  data that is missing, so it should not be computationally extensive.    
+
+## Outliers
+1. We will prioritize limiting outliers of the target variable.  
+2. We will also analyze each numeric independent variable to discover any outliers.
+If there are few outliers, then we will likely omit that data. If outliers persist in
+a large portion of the data, then we will limit the removal of outlying data.
+
+## Skews
+
+### Target Variable  
+* The below exploratory analysis shows that the $Target\_Variable$ is skewed.  
+* However, see that the $\log (Target\_Variable)$ is close to being normal, so 
+we will not  need to transform this data.
+
+### Other Numeric Predictors
+If other numeric variables are highlight skewed (within the test and train data),
+then we will likely use the `boxcox` function to normalize the test and training variables
+associated.
+
+## Factors
+Since the factor data contains few unique values, we will not need to factor lump the data.
+If there was many unique values in related variables, then we would factor lump to 
+help fit the models more efficiently.
+
+```{r}
+# ==============================================================================
+# NOTE THAT ALL WILL CLEANSING DONE IN THIS CODE CHUNK TO MAKE IT EASIER
+# TO COPY AND PASTE FOR TEST DATA, OR BETTER YET CREATE A FUNCTION
+# ==============================================================================
+
+# Missingingness
+## * To handle missingness, we will likely take the following approach for `numeric` and `factor` data:
+### - `Numeric`: Impute missing values using predictive mean matching with the `mice` package
+### - `Factor`: Leverage k-nearest neighbors to impute missing factor data.
+### This is likely possible because there is not a significant portion of the factor
+### data that is missing, so it should not be computationally extensive.
+
+# Outliers
+## 1. We will prioritize limiting outliers of the target variable.  
+## 2. We will also analyze each numeric independent variable to discover any outliers.
+## If there are few outliers, then we will likely omit that data. If outliers persist in
+## a large portion of the data, then we will limit the removal of outlying data.
+
+# Skews
+
+## Target Variable  
+### * The below exploratory analysis shows that the $Target\_Variable$ is skewed.  
+### * However, see that the $\log (Target\_Variable)$ is close to being normal, so 
+### we will not  need to transform this data.
+
+## Other Numeric Predictors
+### If other numeric variables are highlight skewed (within the test and train data),
+### then we will likely use the `boxcox` function to normalize the test and training variables
+### associated.
+
+# Factors
+## Since the factor data contains few unique values, we will not need to factor lump the data.
+## If there was many unique values in related variables, then we would factor lump to 
+## help fit the models more efficiently.
+
+```
+
+
+\newpage 
+
+# Modeling
+
+
