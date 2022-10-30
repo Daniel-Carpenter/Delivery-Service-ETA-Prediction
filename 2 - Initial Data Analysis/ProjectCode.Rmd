@@ -1,0 +1,373 @@
+---
+title:    "ISE 5103 Intelligent Data Analytics"
+subtitle: "Final Project"
+author:   "Daniel Carpenter, Sonaxy Mohanty, & Zachary Knepp"
+date:     "December 2022"
+output: 
+  pdf_document:
+    toc: true
+    number_sections: true
+    toc_depth: 2
+    highlight: arrow
+    latex_engine: xelatex
+  # github_document:
+  #   toc: yes
+  #   toc_depth: 2
+urlcolor: blue
+cache: true
+fig.width: 7
+fig.height: 5
+---
+
+```{r setup, include=FALSE}            
+                                       # By default...
+knitr::opts_chunk$set(echo    = FALSE, # do not show code
+                      message = FALSE, # Do not show messages
+                      warning = FALSE, # Do not show warning messages
+                      
+                      # Figures
+                      fig.width  = 6,
+                      fig.height = 4, 
+                      fig.align  = 'center'
+                      )
+```
+
+
+```{r error=FALSE}
+# Packages --------
+
+# Data Wrangling
+library(tidyverse)
+library(skimr)
+library(lubridate) # dates
+
+# Modeling
+library(MASS)
+library(caret) # Modeling variants like SVM
+library(earth) # Modeling with Mars
+library(pls)   # Modeling with PLS
+library(glmnet) # Modeling with LASSO
+
+# Aesthetics
+library(knitr)
+library(cowplot)  # multiple ggplots on one plot with plot_grid()
+library(scales)
+library(kableExtra)
+library(inspectdf)
+library(GGally) # Pairs plots
+
+#Hold-out Validation
+library(caTools)
+
+#Data Correlation
+library(GGally)
+library(regclass)
+
+#RMSE Calculation
+library(Metrics)
+
+#p-value for OLS model
+library(broom)
+
+#ncvTest
+library(car)
+
+library(corrplot)
+```
+
+\newpage
+
+# General Data Prep
+> For general data preparation, please see conceptual steps below. See `.rmd` file for detailed code.
+
+## Creating the CSV Dataset
+* Note that the original training and test data [found here](https://www.kaggle.com/datasets/radadiyamohit/time-taken-by-delivery-person)
+contains two zipped files totaling around 55,000 `.txt` files  
+* In order to convert this data into a usable format, we created a function that:  
+  - Reads all `txt` contained within a specified folder  
+  - Cleans whitespace, variable naming conventions, and converts `Time_Ordered` 
+  and `Time_Ordered_Picked` from HH:MM string time.  
+  - All variables are cast to their correct data types  
+  - Finally, the data is exported to a single CSV.  
+  - This function is applied to to the training and test data  
+  - [This R file containing the function is located here](https://github.com/Daniel-Carpenter/IDA-Final-Project/blob/main/2%20-%20Initial%20Data%20Analysis/ReadAndCleanTxtFiles.R)  
+* Note that the function is not run within this file due to the time required to run the code. Since there are so many files, it takes a large amount of time.  
+
+
+## Read Training and Test Data
+* Read [training](https://raw.githubusercontent.com/Daniel-Carpenter/IDA-Final-Project/main/2%20-%20Initial%20Data%20Analysis/TrainingData.csv) and [test](https://raw.githubusercontent.com/Daniel-Carpenter/IDA-Final-Project/main/2%20-%20Initial%20Data%20Analysis/TestData.csv) data CSV files from GitHub  
+* Clean data to ensure each read variable has the correct data type (factor, numeric, Date, etc.)  
+
+```{r, cache=TRUE}
+# Read in Data -----------------------------------------------------------------
+
+# Function to read from Git and convert variable types
+readCleanFromGit <- function(gitDirectoryURL, csvName, isTrainingData) {
+  
+  ## GitHub URL's
+  csvFullURL <- paste0(gitDirectoryURL, csvName)
+  
+  ## Read the data from GitHub
+  df <- read.csv(csvFullURL, stringsAsFactors = TRUE) # Training data
+  
+  # Ensure Type Conversion -----------------------------------------------------
+  
+  ## Convert all character data to factor
+  df.goodTypes <- df %>% 
+    
+    ### Ensure boolean variables are numeric
+    mutate_at(vars(
+      Delivery_Person_Age,
+      Delivery_Person_Ratings,
+      Restaurant_Latitude,
+      Restaurant_Longitude,
+      Delivery_Location_Latitude,
+      Delivery_Location_Longitude,
+      Restaurant_Longitude,
+      Time_Ordered,
+      Time_Order_Picked
+      ), as.numeric) %>%
+    
+    ### Make sure dates are dates
+    mutate_at(vars(Order_Date), as.Date) %>%
+  
+    ### Ensure factor are factors
+    mutate_at(vars(
+      Id,
+      Delivery_Person_Id,
+      Weather_Conditions,
+      Road_Traffic_Density,
+      Vehicle_Condition,
+      Type_Of_Order,
+      Type_Of_Vehicle,
+      Multiple_Deliveries,
+      City,
+      Name
+    ), as.factor) %>%
+    
+    mutate(Festival = as.factor(if_else(is.na(Festival), 0, 1)) )
+      
+  # If training data then ensure target variable is good.
+  if (isTrainingData) {
+    df.goodTypes <- df.goodTypes %>%
+      mutate(Target_Variable = as.numeric(Target_Variable) )
+  }
+  
+  # Return csv with type conversion
+  return(df.goodTypes)
+} 
+
+
+# Actually read in the data and clean from Git ---------------------------------
+gitDirectory <- 'https://raw.githubusercontent.com/Daniel-Carpenter/IDA-Final-Project/main/2%20-%20Initial%20Data%20Analysis/'
+
+
+## Training data
+df.train.base <- readCleanFromGit(gitDirectoryURL = gitDirectory, 
+                                 csvName         = 'TrainingData.csv',
+                                 isTrainingData  = TRUE)
+
+## Test data
+df.test.base  <- readCleanFromGit(gitDirectoryURL = gitDirectory, 
+                                  csvName         = 'TestData.csv',
+                                  isTrainingData  = FALSE)
+
+# Test to see if type conversion worked
+# lapply(df.train.base, class)
+# lapply(df.test.base, class)
+```
+
+
+## Create `numeric` and `factor` *base* `data frames`
+
+Make data set of `numeric` variables called `df.train.base.numeric`
+```{r}
+df.train.base.numeric <- df.train.base %>%
+
+  # selecting all the numeric data
+  dplyr::select_if(is.numeric) %>%
+
+  # converting the data frame to tibble
+  as_tibble()
+```
+
+Make data set of `factor` variables called `df.train.base.factor`
+```{r}
+df.train.base.factor <- df.train.base %>%
+
+  # selecting all the numeric data
+  dplyr::select_if(is.factor) %>%
+
+  # converting the data frame to tibble
+  as_tibble()
+```
+
+\newpage
+
+# Data Understanding
+> Create a data quality report of `numeric` and `factor` data  
+> Created function called `dataQualityReport()` to create factor and numeric QA report
+
+```{r}
+# Function for data report
+dataQualityReport <- function(df) {
+  
+  # Function to remove any columns with NA
+  removeColsWithNA <- function(df) {
+    return( df[ , colSums(is.na(df)) == 0] )
+  }
+  
+  # Create Comprehensive data report using skimr package
+  # This is done a bit piece-wise because PDF latex does not like the skimr package
+  # Very much. So Instead of printing `skim(df)`, I have to pull the contents manually
+  # Unfortunately. This is not an issue with html typically.
+  dataReport <- skim(df) %>%
+    rename_all(~str_replace(.,"skim_","")) %>%
+    arrange(type, desc(complete_rate) ) # sort data 
+  
+  # Filter to the class types
+  dataReport.numeric <- dataReport %>% filter(type == 'numeric') # numeric data
+  dataReport.factor  <- dataReport %>% filter(type == 'factor' ) # factor  data
+  
+  # Remove columns that do not apply to this type of data -----------------------
+  
+  ## numeric data
+  dataReport.numeric <- removeColsWithNA(dataReport.numeric)  %>%
+    
+    # Clean column names by removing numeric prefix, 
+    rename_all(~str_replace(.,"numeric.","")) 
+    
+  ## factor  data
+  dataReport.factor  <- removeColsWithNA(dataReport.factor ) %>%
+  
+    # Clean column names by removing factor  prefix
+    rename_all(~str_replace(.,"factor.",""))  
+  
+  
+  # Set up options for Display the reports
+  options(skimr_strip_metadata = FALSE)
+  options(digits=2)
+  options(scipen=99)
+  
+  # Numeric report <- Get summary of data frame --------------------------------
+  
+    # data frame stats
+    dfStats.num <- data.frame(Num_Numeric_Variables = ncol(df %>% select_if(is.numeric)),
+                              Total_Observations    = nrow(df) )
+    
+    # Now see individual column statistics
+    dfColStats.num <- dataReport.numeric %>% 
+      dplyr::select(-type, -hist)
+    
+  
+  # Factor report <- Get summary of data frame --------------------------------
+  
+    # Get summary of data frame
+    dfStats.factor <- data.frame(Num_Factor_Variables = ncol(df %>% select_if(is.factor)),
+                                 Total_Observations   = nrow(df) )
+    
+    # Now see individual column statistics
+    dfColStats.factor <- dataReport.factor  %>% 
+      dplyr::select(-type, -ordered) 
+    
+    
+  # Return the data frames
+  return(list('dfStats.num'       = dfStats.num,    
+              'dfColStats.num'    = dfColStats.num,
+              'dfStats.factor'    = dfStats.factor, 
+              'dfColStats.factor' = dfColStats.factor))
+}
+```
+
+
+## Numeric Data Quality Report
+
+```{r}
+# Get the factor and numeric reports
+initialReport <- dataQualityReport(df.train.base)
+
+# Numeric data frame stats
+initialReport$dfStats.num %>% kable()
+
+# Numeric column stats
+initialReport$dfColStats.num %>%
+  kable() %>% kable_styling(font_size=7, latex_options = 'HOLD_position') # numeric data
+
+```
+
+
+## Factor Data Quality Report
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+# factor data frame stats
+initialReport$dfStats.factor %>% kable()
+
+# factor column stats
+initialReport$dfColStats.factor %>%
+  kable() %>% kable_styling(font_size=7, latex_options = 'HOLD_position') # numeric data
+```
+
+
+\newpage
+
+## Expected Approach for Cleaning Data
+
+### Missingingness
+* To handle missingness, we will likely take the following approach for `numeric` and `factor` data:  
+  - `Numeric`: Impute missing values using predictive mean matching with the `mice` package  
+  - `Factor`: Leverage k-nearest neighbors to impute missing factor data. 
+  This is likely possible because there is not a significant portion of the factor 
+  data that is missing, so it should not be computationally extensive.    
+
+### Outliers
+1. We will prioritize limiting outliers of the target variable.  
+2. We will also analyze each numeric independent variable to discover any outliers.
+If there are few outliers, then we will likely omit that data. If outliers persist in
+a large portion of the data, then we will limit the removal of outlying data.
+
+### Skews
+
+#### Target Variable  
+* The below exploratory analysis shows that the $Target\_Variable$ is skewed.  
+* However, see that the $\log (Target\_Variable)$ is close to being normal, so 
+we will not  need to transform this data.
+
+#### Other Numeric Predictors
+If other numeric variables are highlight skewed (within the test and train data),
+then we will likely use the `boxcox` function to normalize the test and training variables
+associated.
+
+### Factors
+Since the factor data contains few unique values, we will not need to factor lump the data.
+If there was many unique values in related variables, then we would factor lump to 
+help fit the models more efficiently.
+
+\newpage
+
+## Exploratory Analysis and Visualizations
+
+### Analysis 1: Exploring the Target Variable
+```{r}
+# names(df.train.base)
+
+# Histogram of target variable and log(Target_variable + 1)
+hist(df.train.base$Target_Variable,
+     col = 'skyblue4',
+     main = 'Distribution of Target Variable',
+     xlab = 'Target Revenue')
+
+hist(log(df.train.base$Target_Variable + 1),
+     col = 'skyblue4',
+     main = 'Distribution of log(Target Variable)',
+     xlab = 'log(Target Revenue)')
+```
+
+
+### Analysis 2: Correlation of Numeric Data
+
+#### Correlation between numeric features in the dataset  
+
+```{r, fig.width=5, fig.height=5, fig.align='center'}
+M = cor(df.train.base.numeric) # create correlation matric of numeric data
+corrplot(M, method = 'ellipse') # Show spread and direction  
+```
