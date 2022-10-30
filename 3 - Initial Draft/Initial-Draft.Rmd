@@ -404,20 +404,177 @@ help fit the models more efficiently.
 # TO COPY AND PASTE FOR TEST DATA, OR BETTER YET CREATE A FUNCTION
 # ==============================================================================
 
-# Missingingness
-## * To handle missingness, we will likely take the following approach for `numeric` and `factor` data:
-### - `Numeric`: Impute missing values using predictive mean matching with the `mice` package
-### - `Factor`: Leverage k-nearest neighbors to impute missing factor data.
+# Copy data
+df         <- df.train.base          # Full dataset
+df.numeric <- df.train.base.numeric  # Numeric only columns
+df.imputed <- df                     # To store numeric imputation output
+
+
+# Missingingness ---------------------------------------------------------------
+
+### `Numeric`: Impute missing values using predictive mean matching with the `mice` package
+
+# Note `see Imputation()` function to visualize the imputation
+seeImputation <- function(df, df.meanInputed, 
+                          imputationMethod) {
+  
+  # Min/Max ranges so actual and imputed histograms align
+  yMin = quantile(df.meanInputed$y, 0.05)
+  yMax = max(df.meanInputed$y)
+  
+  # Non Altered data -------------------------------------------------
+  
+  meanVal = mean(df$y, na.rm=T) # mean of the non altered data
+  
+  # Create the plot
+  p1 <- df %>%
+    ggplot(aes(x = y)) +
+    
+    # Histogram
+    geom_histogram(color = 'grey65', fill = 'grey95') +
+    
+    # The mean value line
+    geom_vline(xintercept = meanVal, color = 'tomato3') +
+    
+    # Text associated with mean value
+    annotate("text", 
+             label = "Mean Value", 
+             x = meanVal, y = 100, 
+             size = 5, colour = "tomato3" ) +
+    
+    # Labels
+    labs(title = 'Data with Missing Values',
+         y     = 'Frequency', 
+         x     = '' ) +
+    
+    xlim(yMin, yMax) + # min and max range of x axis (for equal comparison)
+    theme_minimal() # Theme
+  
+  
+  # Imputed data -------------------------------------------------
+  meanValImpute = mean(df.meanInputed$y, na.rm=T)
+  
+  # Create the plot
+  p2 <- df.meanInputed %>%
+    ggplot(aes(x = y)) +
+    
+    # Histogram
+    geom_histogram(color = 'grey65', fill = 'grey95') +
+    
+    # The mean value line
+    geom_vline(xintercept = meanVal, color = 'tomato3') +
+    
+    # Text associated with mean value
+    annotate("text", 
+             label = "Mean Value", 
+             x = meanValImpute, y = 100, 
+             size = 5, colour = "tomato3" ) +
+    
+    # Labels
+    labs(title = 'Data without Missing Values',
+             subtitle = 'Using PMM',
+             y = 'Frequency', 
+             x = imputationMethod) +
+    
+    xlim(yMin, yMax) + # min and max range of x axis (for equal comparison)
+    theme_minimal() # Theme
+  
+  # Variation scatter ----------------------------------------------------------
+  
+  p3 <- df.meanInputed %>% ggplot(aes(x=rexp(length(y)), y=y, color=is.na(df$y))) + 
+    
+    # Add points
+    geom_point(alpha = 0.5) +
+    
+    # Colors, limits, labels, and themes
+    scale_color_manual(values = c('grey80', 'tomato3'),
+                       labels = c('Actuals', 'Imputed') ) +
+    ylim(0, quantile(df.meanInputed$y, 0.99)) + # lower 99% of dist
+    labs(title   = 'Variation of Actuals vs. Imputed Data',
+         x       = 'x', 
+         y       = imputationMethod,
+         caption =paste0('\nUsing housing.csv data',
+                         '\nOnly showing lower 99% of distribution for viewing') 
+         ) +
+    theme_minimal() + theme(legend.position = 'bottom',
+                            legend.title    = element_blank())
+  
+  
+  # Combine the plots for the final returned output
+  combinedPlots <- plot_grid(p1, p2, p3, 
+                             ncol = 1, label_size = 12,
+                             rel_heights = c(1, 1.1, 1.75))
+  return(combinedPlots)
+}
+
+# Create function to impute via `PMM`
+imputeWithPMM <- function(colWithMissingData) {
+  
+  # Using the mice package
+  suppressMessages(library(mice))
+  
+  # Discover the missing rows
+  isMissing <- is.na(colWithMissingData) 
+  
+  # Create data frame to pass to PMM imputation function from mic package
+  df <- data.frame(x       = rexp(length(colWithMissingData)), # meaningless x to help show variation 
+                   y       = colWithMissingData, 
+                   missing = isMissing)
+  
+  # imputation by PMM
+  df[isMissing, "y"] <- mice.impute.pmm( df$y, 
+                                        !df$missing, 
+                                         df$x)
+  
+  return(df$y)
+}
+
+
+# Which columns has Na's?
+colNamesWithNulls <- colnames(df.numeric[ , colSums(is.na(df.numeric)) != 0])
+colNamesWithNulls
+
+numberOfColsWithNulls = length(colNamesWithNulls)
+
+# For each of the numeric columns with null values
+for (colWithNullsNum in 1:numberOfColsWithNulls) {
+  
+  # The name of the column with null values
+  nameOfThisColumn <- colNamesWithNulls[colWithNullsNum]
+  
+  # Get the actual data of the column with nulls
+  colWithNulls <- df[, nameOfThisColumn]
+  
+  # Impute the missing values with PMM
+  imputedValues <- imputeWithPMM(colWithNulls)
+  
+  # Now store the data in the original new frame
+  df.imputed[, nameOfThisColumn] <- imputedValues
+  
+  # Save a visualization of the imputation
+  pmmVisual <- seeImputation(data.frame(y = colWithNulls),
+                             data.frame(y = imputedValues),
+                             nameOfThisColumn )
+  
+  fileToSave = paste0('OutputPMM/Imputation_With_PMM_', nameOfThisColumn, '.pdf')
+  print(paste0('For imputation results of ', nameOfThisColumn, ', see ', fileToSave))
+  dir.create("OutputPMM/")
+  ggsave(pmmVisual, filename = fileToSave,
+         height = 11, width = 8.5)
+}
+
+### `Factor`: Leverage k-nearest neighbors to impute missing factor data. 
 ### This is likely possible because there is not a significant portion of the factor
 ### data that is missing, so it should not be computationally extensive.
 
-# Outliers
+
+# Outliers ---------------------------------------------------------------------
 ## 1. We will prioritize limiting outliers of the target variable.  
 ## 2. We will also analyze each numeric independent variable to discover any outliers.
 ## If there are few outliers, then we will likely omit that data. If outliers persist in
 ## a large portion of the data, then we will limit the removal of outlying data.
 
-# Skews
+# Skews ------------------------------------------------------------------------
 
 ## Target Variable  
 ### * The below exploratory analysis shows that the $Target\_Variable$ is skewed.  
@@ -429,7 +586,7 @@ help fit the models more efficiently.
 ### then we will likely use the `boxcox` function to normalize the test and training variables
 ### associated.
 
-# Factors
+# Factors ----------------------------------------------------------------------
 ## Since the factor data contains few unique values, we will not need to factor lump the data.
 ## If there was many unique values in related variables, then we would factor lump to 
 ## help fit the models more efficiently.
