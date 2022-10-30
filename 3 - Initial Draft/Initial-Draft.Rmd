@@ -409,7 +409,14 @@ help fit the models more efficiently.
 ```{r}
 # ==============================================================================
 # NOTE THAT ALL WILL CLEANSING DONE IN THIS CODE CHUNK TO MAKE IT EASIER
-# TO COPY AND PASTE FOR TEST DATA, OR BETTER YET CREATE A FUNCTION
+# END GOAL IS TO CREATE A FUNCTION SO WE CAN EASILY APPLY TO TEST DATA
+# TO REMOVE DUPLICATION
+#
+# Goal is to clean up:
+#   - Missingingness
+#   - Skews
+#   - Outliers
+#   - Factors
 # ==============================================================================
 
 # Copy data
@@ -692,7 +699,13 @@ paste('Num rows after:',  nrow(df.impNormNoOutliers))
 ## help fit the models more efficiently.
 
 
-df.clean <- df.impNormNoOutliers
+# Create a cleaned dataset for modeling
+# Does not include any identifiers
+df.clean <- df.impNormNoOutliers %>%
+  dplyr::select(-c(Id,
+                   Delivery_Person_Id,
+                   Name))
+
 ```
 
 
@@ -700,4 +713,112 @@ df.clean <- df.impNormNoOutliers
 
 # Modeling
 
+## OLS Test
+```{r}
+# Fit Initial model
+fit.ols <- lm(Target_Variable ~ Delivery_Person_Age + Delivery_Person_Ratings + 
+                Restaurant_Latitude + Weather_Conditions + Road_Traffic_Density + 
+                Vehicle_Condition + Type_Of_Vehicle + Multiple_Deliveries + 
+                Festival + City + Time_Order_Picked,
+              data = df.clean)
 
+# See fit
+# summary(fit.ols)
+
+
+# Use stepAIC to discover better model
+# fit.ols.stepAIC <- stepAIC(fit.ols, direction = "both")
+# summary(fit.ols.stepAIC)
+
+# Output model
+# Target_Variable ~ Delivery_Person_Age + Delivery_Person_Ratings + 
+#     Restaurant_Latitude + Weather_Conditions + Road_Traffic_Density + 
+#     Vehicle_Condition + Type_Of_Vehicle + Multiple_Deliveries + 
+#     Festival + City + Time_Order_Picked
+```
+
+
+```{r}
+# OLS Diagnostics
+
+# Get the RMSE and R Squared of the model
+ols.rmse    <- rmse(actual=df.clean$Target_Variable, predicted=fit.ols$fitted.values)
+ols.summary <- summary(fit.ols)
+
+# Key diagnostics
+keyDiagnostics.ols <- data.frame(Model    = 'OLS',
+                                 Notes    = 'lm',
+                                 Hyperparameters = 'N/A',
+                                 RMSE     = ols.rmse,
+                                 Rsquared = ols.summary$adj.r.squared)
+
+# Show output
+keyDiagnostics.ols %>% 
+  knitr::kable()
+```
+
+
+## MARS Test
+```{r}
+# Model tuning controls
+ctrl <- trainControl(method  = "repeatedcv", 
+                     number  = 5, # 5 fold cross validation
+                     repeats = 1  # 1 repeats
+                     )
+
+# Fit the model
+fit.mars <- train(data = df.clean, 
+                  Target_Variable ~ Delivery_Person_Age + Delivery_Person_Ratings + 
+                    Restaurant_Latitude + Weather_Conditions + Road_Traffic_Density + 
+                    Vehicle_Condition + Type_Of_Vehicle + Multiple_Deliveries + 
+                    Festival + City + Time_Order_Picked,
+                  method     = "earth",             # Earth is for MARS models
+                  tuneLength = 9,                   # 9 values of the cost function
+                  preProc    = c("center","scale"), # Center and scale data
+                  trControl  = ctrl 
+                 )
+
+# summary(fit.mars)
+```
+
+
+```{r}
+# MARS Diagnostics
+
+# Get the RMSE and R Squared of the model
+hyperparameters.mars = list('degree' = fit.mars[["bestTune"]][["degree"]],
+                            'nprune' = fit.mars[["bestTune"]][["nprune"]])
+
+keyDiagnostics.mars <- data.frame(Model   = 'MARS',
+                                  Notes    = 'caret and earth',
+                                  Hyperparameters = paste('Degree =', hyperparameters.mars$degree, ',',
+                                                          'nprune =', hyperparameters.mars$nprune)
+                                  )
+
+keyDiagnostics.mars <- cbind(keyDiagnostics.mars,
+                            fit.mars$results %>% 
+                              filter(degree == hyperparameters.mars$degree,
+                                     nprune == hyperparameters.mars$nprune) %>%
+                              dplyr::select(RMSE, Rsquared)
+                      )
+
+# Show output
+keyDiagnostics.mars %>% kable()
+```
+
+
+```{r}
+# Add the key diagnostics here
+rbind(
+  keyDiagnostics.ols,
+  keyDiagnostics.mars
+  # keyDiagnostics.pcr,
+  # keyDiagnostics.elasticnet
+) %>%
+  
+  # Round to 4 digits across numeric data
+  mutate_if(is.numeric, round, digits = 4) %>%
+  
+  # Spit out kable table
+  kable()
+```
