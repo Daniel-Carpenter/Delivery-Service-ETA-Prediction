@@ -15,8 +15,6 @@ output:
   #   toc_depth: 2
 urlcolor: blue
 cache: true
-fig.width: 7
-fig.height: 5
 ---
 
 ```{r setup, include=FALSE}            
@@ -26,8 +24,8 @@ knitr::opts_chunk$set(echo    = FALSE, # do not show code
                       warning = FALSE, # Do not show warning messages
                       
                       # Figures
-                      fig.width  = 6,
-                      fig.height = 4, 
+                      fig.width  = 5,
+                      fig.height = 3, 
                       fig.align  = 'center'
                       )
 ```
@@ -179,27 +177,32 @@ df.test.base  <- readCleanFromGit(gitDirectoryURL = gitDirectory,
 
 
 ## Create `numeric` and `factor` *base* `data frames`
-
-Make data set of `numeric` variables called `df.train.base.numeric`
 ```{r}
-df.train.base.numeric <- df.train.base %>%
+# Function to separate into factor and numeric data ----------------------------
+separateFactorAndNumeric <- function(df, functionType) {
+  
+  # Numeric Data frame
+  df.typeSubset<- df %>%
+  
+    # selecting all the ______ data, e.g. is.numeric
+    dplyr::select_if(functionType) %>%
+  
+    # converting the data frame to tibble
+    as_tibble()
+  
+  return(df.typeSubset)
+}
 
-  # selecting all the numeric data
-  dplyr::select_if(is.numeric) %>%
 
-  # converting the data frame to tibble
-  as_tibble()
-```
+# Create the factor and numeric data -------------------------------------------
 
-Make data set of `factor` variables called `df.train.base.factor`
-```{r}
-df.train.base.factor <- df.train.base %>%
+## Training data
+df.train.base.numeric <- separateFactorAndNumeric(df.train.base, is.numeric) # numeric
+df.train.base.factor  <- separateFactorAndNumeric(df.train.base, is.factor)  # factor
 
-  # selecting all the numeric data
-  dplyr::select_if(is.factor) %>%
-
-  # converting the data frame to tibble
-  as_tibble()
+## Test Data
+df.test.base.numeric  <- separateFactorAndNumeric(df.train.base, is.numeric) # numeric
+df.test.base.factor   <- separateFactorAndNumeric(df.train.base, is.factor)  # factor
 ```
 
 \newpage
@@ -333,9 +336,10 @@ a large portion of the data, then we will limit the removal of outlying data.
 we will not  need to transform this data.
 
 #### Other Numeric Predictors
-If other numeric variables are highlight skewed (within the test and train data),
+If other numeric variables are skewed (within the test and train data),
 then we will likely use the `boxcox` function to normalize the test and training variables
-associated.
+associated. We will test for skewness in in numeric data using the `skewness` 
+function in the `moments` package.
 
 ### Factors
 Since the factor data contains few unique values, we will not need to factor lump the data.
@@ -346,28 +350,74 @@ help fit the models more efficiently.
 
 ## Exploratory Analysis and Visualizations
 
-### Analysis 1: Exploring the Target Variable
+# Exploring the Target Variable
+
 ```{r}
 # names(df.train.base)
 
 # Histogram of target variable and log(Target_variable + 1)
-hist(df.train.base$Target_Variable,
-     col = 'skyblue4',
-     main = 'Distribution of Target Variable',
-     xlab = 'Target Revenue')
+ggplot(df.train.base, aes(x=Target_Variable)) + 
+  geom_histogram(aes(y=..density..), color="black", fill="deepskyblue") +
+  geom_density(alpha=.6, fill="#FF6666") + 
+  ggtitle("Histogram of Target_Variable")
 
-hist(log(df.train.base$Target_Variable + 1),
-     col = 'skyblue4',
-     main = 'Distribution of log(Target Variable)',
-     xlab = 'log(Target Revenue)')
+
+ggplot(df.train.base, aes(x=log(Target_Variable + 1))) + 
+  geom_histogram(aes(y=..density..), color="black", fill="deepskyblue") +
+  geom_density(alpha=.6, fill="#FF6666") +
+  ggtitle("Histogram of log(Target_Variable + 1)")
+```
+
+\newpage
+
+# Visualizations of interactions between Target variable and factor variables
+
+```{r}
+# names(df.train.base)
+
+
+ggplot(df.train.base, aes(x=Multiple_Deliveries, y=Target_Variable)) + 
+  geom_boxplot()
+
+
+ggplot(df.train.base, aes(x=City, y=Target_Variable)) + 
+  geom_boxplot()
+
+ggplot(df.train.base, aes(x=Vehicle_Condition, y=Target_Variable)) + 
+  geom_boxplot()
 ```
 
 
-### Analysis 2: Correlation of Numeric Data
+# Visualizations of interactions between Target variable and numeric variables
 
-#### Correlation between numeric features in the dataset  
+```{r}
+# names(df.train.base.numeric)
 
-```{r, fig.width=5, fig.height=5, fig.align='center'}
-M = cor(df.train.base.numeric) # create correlation matric of numeric data
-corrplot(M, method = 'ellipse') # Show spread and direction  
+
+ggplot(df.train.base, aes(x=Delivery_Person_Ratings, y=Target_Variable)) + 
+  geom_point()
 ```
+
+<!-- INSERT HERE  -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+<!-- -- -->
+
+
+  

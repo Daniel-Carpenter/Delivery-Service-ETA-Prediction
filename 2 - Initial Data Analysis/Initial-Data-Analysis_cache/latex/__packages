@@ -1,10 +1,3 @@
-base
-methods
-datasets
-utils
-grDevices
-graphics
-stats
 tidyverse
 ggplot2
 tibble
@@ -36,8 +29,6 @@ GGally
 caTools
 leaps
 bestglm
-stats4
-splines
 VGAM
 rpart
 randomForest
