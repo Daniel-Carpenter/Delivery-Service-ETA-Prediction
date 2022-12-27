@@ -8,7 +8,7 @@
 
 
 ## Overview
-This analysis aims to predict estimated delivery times for a food delivery service. A firm can give
+This detailed analysis aims to predict estimated delivery times for a food delivery service. A firm can give
 the option for delivering the food to a customer’s house; using current technology, the
 company may give the consumer an estimated time of arrival to help manage their
 expectations, which could lead to enhanced retention of customers for future orders.
