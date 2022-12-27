@@ -3,11 +3,21 @@
 > Fall 2022  
 
 ## Content Overview
-1. [Project Proposal](1%20-%20Project%20Proposal/)
-2. [Initial Data Analysis](2%20-%20Initial%20Data%20Analysis/Initial-Data-Analysis.pdf)
-2. [Initital Draft of Report](3%20-%20Initial%20Draft/Carpenter_Knepp_Mohanty_Initial_Draft.pdf)
-3. [Peer Critque](4%20-%20Peer%20Critique/)
-4. [Presentation Slides](5%20-%20Presentation%20Slides/IDA-Final-Presentation%20-%20Submission.pdf)
-5. [Final Report](6%20-%20Final%20Report/)
+1. [Presentation Slides](5%20-%20Presentation%20Slides/IDA-Final-Presentation%20-%20Submission.pdf)
+2. [Final Report](6%20-%20Final%20Report/)
     - [Report](6%20-%20Final%20Report/Carpenter_Mohanty_Knepp_FinalReport.pdf)
-    - [Code](6%20-%20Final%20Report/FinalModel.Rmd)
+    - [`R` Code](6%20-%20Final%20Report/FinalModel.Rmd)
+
+## Project Description
+This analysis aims to predict estimated delivery times for a food delivery service. A firm can give
+the option for delivering the food to a customer’s house; using current technology, the
+company may give the consumer an estimated time of arrival to help manage their
+expectations, which could lead to enhanced retention of customers for future orders.
+Companies like DoorDash or GrubHub give customers an estimated time of delivery for food
+and beverage orders. Most consumers may expect a few conditions to affect the time to
+deliver, but there may be many circumstances that impact the delivery time. For example, if the
+algorithm knows that there is a crash impeding traffic between the major routes of the
+customer and the delivery service, then that may impact the transport time. Additionally,
+severe weather may delay the ability of a driver to deliver the food to the destination. Overall,
+providing accurate estimates to the customer will help manage expectations, which may lead to
+retained customers.
