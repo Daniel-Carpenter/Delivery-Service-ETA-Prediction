@@ -1,7 +1,7 @@
 # Predicting Time of Arrival for Food Delivery Service 
 > Daniel Carpenter, Sonaxy Mohanty, and Zach Knepp  
-> Initelligent Data Analytics - Final Project (DSA 5013-995)  
-> Fall 2022  
+> Initelligent Data Analytics - Final Project  
+> December 2022  
 
 ## Presentation
 [![Presentation of Project](img/Thumbnail.png)](https://vimeo.com/784619959)
@@ -24,7 +24,6 @@ retained customers.
 <br>
 
 ## Quick Links
-1. [Presentation Slides](5%20-%20Presentation%20Slides/IDA-Final-Presentation%20-%20Submission.pdf)
-2. [Final Report](6%20-%20Final%20Report/)
-    - [Report](6%20-%20Final%20Report/Carpenter_Mohanty_Knepp_FinalReport.pdf)
-    - [`R` Code](6%20-%20Final%20Report/FinalModel.Rmd)
+1. [Presentation Slides](1%20-%20Presentation%20Slides/IDA-Final-Presentation%20-%20Submission.pdf)
+2. [PDF Report](2%20-%20Final%20Report/Carpenter_Mohanty_Knepp_FinalReport.pdf)
+3. [`R` Code](2%20-%20Final%20Report/FinalModel.Rmd)
