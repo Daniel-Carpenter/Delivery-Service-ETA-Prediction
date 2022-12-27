@@ -1,5 +1,5 @@
-# Initelligent Data Analytics - Final Project
-> DSA 5013-995  
+# Predicting Time of Arrival for Food Delivery Service 
+> Initelligent Data Analytics - Final Project (DSA 5013-995)  
 > Fall 2022  
 
 ## Content Overview
